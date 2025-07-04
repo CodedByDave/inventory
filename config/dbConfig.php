@@ -167,3 +167,10 @@ class dbConfig {
         throw new RuntimeException("Cannot unserialize database connection");
     }
 }
+
+class StaffModel {
+    public static function getStaffCount(): int {
+        $result = dbConfig::fetchOne("SELECT COUNT(*) AS count FROM tbl_staff");
+        return $result['count'] ?? 0;
+    }
+}

@@ -12,7 +12,7 @@ $login_success = false;
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $userid = trim($_POST['userid'] ?? '');
     $password = trim($_POST['password'] ?? '');
-    
+
     $userid_value = htmlspecialchars($userid);
 
     if (empty($userid)) {
@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         try {
             $pdo = dbConfig::getConnection();
-            
+
             $sql = "SELECT * FROM tbl_staff WHERE staff_id = :staff_id";
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':staff_id', $userid, PDO::PARAM_STR);
@@ -33,9 +33,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 if (password_verify($password, $user['password'])) {
                     $_SESSION['id'] = $user['staff_id'];
-                    $_SESSION['username'] = $user['first_name'];  // Or full name, depends on your setup
-                    $_SESSION['role'] = 'staff'; // If you have roles, otherwise set statically
+                    $_SESSION['username'] = $user['first_name'];
+                    $_SESSION['role'] = 'staff';
                     $_SESSION['logged_in'] = true;
+
+                    // ✅ Logging the login event
+                    $ip = $_SERVER['REMOTE_ADDR'];
+                    $staffId = $user['id'];
+                    $description = 'Staff logged in successfully';
+
+                    $logStmt = $pdo->prepare("
+                        INSERT INTO tbl_staff_logs (staff_id, action, description, ip_address)
+                        VALUES (:staff_id, 'LOGIN', :description, :ip)
+                    ");
+                    $logStmt->execute([
+                        ':staff_id' => $staffId,
+                        ':description' => $description,
+                        ':ip' => $ip
+                    ]);
 
                     $login_success = true;
                     $redirect = '/sia_lab1/admin/pages/staff/staff_dashboard.php';
@@ -60,9 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    
+
     <title>Staff | Login</title>
-    
+
     <?php 
         include $_SERVER['DOCUMENT_ROOT'] . '/sia_lab1/includes/header.php';
     ?>
@@ -116,7 +131,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
 </div>
-
 
 <script src="/sia_lab1/assets/js/components/password_toggle.js"></script>
 
